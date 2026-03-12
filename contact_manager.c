@@ -1,38 +1,34 @@
 /*
  * contact_manager.c
- * Contact Manager — Commit 1
- * Set up the project structure, define the Contact struct,
- * and build the main menu system.
+ * Contact Manager — A simple C program to manage a list of contacts.
+ * Add the add_contact() function so the user can
+ * store a new contact with name, phone, and email.
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-//─ Constants 
-#define MAX_CONTACTS  50    // maximum number of contacts allowed in the system
-#define NAME_LEN      50   // maximum length of a contact's name
-#define PHONE_LEN     20    // maximum length of a phone number
-#define EMAIL_LEN     50    // maximum length of an email address
+// Constants
+#define MAX_CONTACTS  50
+#define NAME_LEN      50
+#define PHONE_LEN     20
+#define EMAIL_LEN     50
 
 //Contact struct
-/* Groups all information about one contact into a single unit.
-   This is the core data structure of the entire program. */
 struct Contact {
     char name[NAME_LEN];
     char phone[PHONE_LEN];
     char email[EMAIL_LEN];
 };
 
-// Global contact list 
-struct Contact contacts[MAX_CONTACTS];  /* holds all contacts    */
-int contact_count = 0;                  /* how many are stored   */
+//Global contact list
+struct Contact contacts[MAX_CONTACTS];
+int contact_count = 0;
 
 /* ================================================================
    clear_input_buffer()
    Drains leftover characters from stdin after every scanf.
-   Prevents input bugs when switching between reading numbers
-   and strings.
 ================================================================ */
 void clear_input_buffer(void)
 {
@@ -44,7 +40,6 @@ void clear_input_buffer(void)
 /* ================================================================
    show_menu()
    Prints the main menu options to the console.
-   Called at the start of every loop in main().
 ================================================================ */
 void show_menu(void)
 {
@@ -60,7 +55,48 @@ void show_menu(void)
     printf("  Enter your choice: ");
 }
 
-// Main function — entry point of the program
+/* ================================================================
+   add_contact()
+   Adds a new contact to the contacts array.
+   Asks the user for name, phone, and email one by one.
+   Uses fgets() to read full strings including spaces.
+   strcspn() removes the newline character fgets adds.
+   Checks if the contact list is full before adding.
+================================================================ */
+void add_contact(void)
+{
+    /* Stop if we have reached the maximum limit */
+    if (contact_count >= MAX_CONTACTS) {
+        printf("\n  Contact list is full! Cannot add more.\n");
+        return;
+    }
+
+    printf("\n--- Add New Contact ---\n");
+
+    /* Read name — fgets reads the full line including spaces */
+    printf("  Enter name  : ");
+    fgets(contacts[contact_count].name, NAME_LEN, stdin);
+    /* strcspn finds the position of '\n' and replaces it with '\0' */
+    contacts[contact_count].name[strcspn(contacts[contact_count].name, "\n")] = '\0';
+
+    // Read phone number 
+    printf("  Enter phone : ");
+    fgets(contacts[contact_count].phone, PHONE_LEN, stdin);
+    contacts[contact_count].phone[strcspn(contacts[contact_count].phone, "\n")] = '\0';
+
+    // Read email address
+    printf("  Enter email : ");
+    fgets(contacts[contact_count].email, EMAIL_LEN, stdin);
+    contacts[contact_count].email[strcspn(contacts[contact_count].email, "\n")] = '\0';
+
+    /* Increment counter — contact is now officially saved */
+    contact_count++;
+
+    printf("\n  Contact added successfully!\n");
+    printf("  Total contacts: %d\n", contact_count);
+}
+
+// Main
 int main(void)
 {
     int choice;
@@ -72,7 +108,7 @@ int main(void)
     printf("  Store and manage your contacts easily.\n");
     printf("  Maximum contacts: %d\n", MAX_CONTACTS);
 
-    /* Main loop — keeps running until user picks Exit */
+    // Main loop 
     do {
         show_menu();
         scanf("%d", &choice);
@@ -80,7 +116,7 @@ int main(void)
 
         switch (choice) {
             case 1:
-                printf("\n  [Coming soon] Add Contact\n");
+                add_contact();
                 break;
             case 2:
                 printf("\n  [Coming soon] View All Contacts\n");

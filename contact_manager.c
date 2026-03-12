@@ -1,34 +1,41 @@
 /*
  * contact_manager.c
- * Contact Manager in C
- * Add the search_contact() function so the user can
- * find a contact by typing part or all of their name.
+ *
+ * A console-based Contact Manager written in C.
+ * The user can add, view, search, and delete contacts.
+ * All contacts are stored in an array of structs.
+ *
+ * Compile : gcc contact_manager.c -o contact_manager
+ * Run     : ./contact_manager
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-//Constants 
+// Constants 
 #define MAX_CONTACTS  50
 #define NAME_LEN      50
 #define PHONE_LEN     20
 #define EMAIL_LEN     50
 
-// Contact struct 
+//Contact struct
+/* Groups all information about one contact into a single unit.
+   This is the core data structure of the entire program. */
 struct Contact {
     char name[NAME_LEN];
     char phone[PHONE_LEN];
     char email[EMAIL_LEN];
 };
 
-//─ Global contact list 
+//Global contact list
 struct Contact contacts[MAX_CONTACTS];
 int contact_count = 0;
 
 /* ================================================================
    clear_input_buffer()
    Drains leftover characters from stdin after every scanf.
+   Prevents input bugs when switching between numbers and strings.
 ================================================================ */
 void clear_input_buffer(void)
 {
@@ -40,6 +47,7 @@ void clear_input_buffer(void)
 /* ================================================================
    show_menu()
    Prints the main menu options to the console.
+   Called at the start of every loop in main().
 ================================================================ */
 void show_menu(void)
 {
@@ -59,6 +67,7 @@ void show_menu(void)
    add_contact()
    Adds a new contact to the contacts array.
    Reads name, phone, and email using fgets().
+   strcspn() removes the newline fgets adds at the end.
 ================================================================ */
 void add_contact(void)
 {
@@ -116,22 +125,18 @@ void view_contacts(void)
 
 /* ================================================================
    search_contact()
-   Searches for a contact by name.
-   Uses strstr() to check if the search term appears
-   anywhere inside a contact name.
-   This means partial searches work too —
-   typing "ram" will match "Muhammad Ramzan".
-   Prints all matching contacts found.
+   Searches for a contact by name using strstr().
+   Partial searches work — typing "ram" finds "Muhammad Ramzan".
+   Prints all contacts that match the search term.
 ================================================================ */
 void search_contact(void)
 {
     char search[NAME_LEN];
     int  i;
-    int  found = 0;   /* tracks if any match was found */
+    int  found = 0;
 
     printf("\n--- Search Contact ---\n");
 
-    /* Check if the list is empty before searching */
     if (contact_count == 0) {
         printf("  No contacts to search. Add some contacts first.\n");
         return;
@@ -141,16 +146,7 @@ void search_contact(void)
     fgets(search, NAME_LEN, stdin);
     search[strcspn(search, "\n")] = '\0';
 
-    /* Loop through all contacts and check each name */
     for (i = 0; i < contact_count; i++) {
-
-        /*
-         * strstr(haystack, needle)
-         * Returns a pointer if needle exists inside haystack.
-         * Returns NULL if not found.
-         * We use it to check if the search term is inside
-         * the contact name — even as a partial match.
-         */
         if (strstr(contacts[i].name, search) != NULL) {
             printf("\n  Match found:\n");
             printf("    Name  : %s\n", contacts[i].name);
@@ -161,13 +157,71 @@ void search_contact(void)
         }
     }
 
-    /* If no match was found after checking all contacts */
     if (!found) {
         printf("\n  No contact found with that name.\n");
     }
 }
 
-// Main 
+/* ================================================================
+   delete_contact()
+   Deletes a contact by its number in the list.
+   First calls view_contacts() so the user can see the numbers.
+   After the user picks a number the function uses the shift
+   technique to fill the gap:
+     — every contact after the deleted one moves one step back
+     — contact_count is reduced by one
+   This keeps the array compact with no empty holes in the middle.
+================================================================ */
+void delete_contact(void)
+{
+    int i;
+    int choice;
+
+    /* Show all contacts first so the user knows what to delete */
+    view_contacts();
+
+    /* Nothing to delete if list is empty */
+    if (contact_count == 0) return;
+
+    printf("\n  Enter contact number to delete: ");
+    scanf("%d", &choice);
+    clear_input_buffer();
+
+    /* Make sure the number is valid */
+    if (choice < 1 || choice > contact_count) {
+        printf("\n  Invalid contact number!\n");
+        return;
+    }
+
+    /* Convert from 1-based display number to 0-based array index */
+    choice = choice - 1;
+
+    /*
+     * Shift technique:
+     * Copy each contact one position backward starting from
+     * the deleted position. This overwrites the deleted contact
+     * and closes the gap in the array.
+     *
+     * Example — deleting contact at index 1 (contact 2):
+     *   Before: [A] [B] [C] [D]
+     *   After:  [A] [C] [D]
+     */
+    for (i = choice; i < contact_count - 1; i++) {
+        contacts[i] = contacts[i + 1];
+    }
+
+    /* Reduce count — the last slot is now a duplicate and ignored */
+    contact_count--;
+
+    printf("\n  Contact deleted successfully!\n");
+    printf("  Total contacts remaining: %d\n", contact_count);
+}
+
+/* ================================================================
+   main()
+   Entry point. Prints the welcome banner and runs the program
+   in a loop until the user selects Exit.
+================================================================ */
 int main(void)
 {
     int choice;
@@ -179,7 +233,7 @@ int main(void)
     printf("  Store and manage your contacts easily.\n");
     printf("  Maximum contacts: %d\n", MAX_CONTACTS);
 
-    /* Main loop */
+    /* Main loop — keeps running until user picks Exit */
     do {
         show_menu();
         scanf("%d", &choice);
@@ -196,10 +250,12 @@ int main(void)
                 search_contact();
                 break;
             case 4:
-                printf("\n  [Coming soon] Delete Contact\n");
+                delete_contact();
                 break;
             case 5:
-                printf("\n  Goodbye!\n");
+                printf("\n========================================\n");
+                printf("  Goodbye! Thanks for using Contact Manager.\n");
+                printf("========================================\n\n");
                 break;
             default:
                 printf("\n  Invalid choice! Please enter 1 to 5.\n");
